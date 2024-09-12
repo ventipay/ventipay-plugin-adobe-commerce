@@ -2,12 +2,7 @@
     "name": "ventipay/adobe-commerce-checkout",
     "description": "VentiPay Adobe Commerce Checkout Plugin",
     "require": {
-        "php": "~7.3.0||~7.4.0||~8.1.0||~8.2.0||~8.3.0",
-        "magento/module-sales": "100.1.*",
-        "magento/module-checkout": "100.1.*",
-        "magento/module-payment": "100.1.*",
-        "magento/framework": "100.1.*",
-        "magento/magento-composer-installer": "100.1.*"
+        "php": "~7.3.0||~7.4.0||~8.1.0||~8.2.0||~8.3.0"
     },
     "type": "magento2-module",
     "authors": [
@@ -15,7 +10,7 @@
             "name": "VentiPay"
         }
     ],
-    "version": "1.0.1",
+    "version": "1.0.2",
     "license": [
         "OSL-3.0",
         "AFL-3.0"
