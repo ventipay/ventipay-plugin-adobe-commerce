@@ -28,7 +28,7 @@ php bin/magento setup:di:compile
 
 Lo primero es conseguir tu API Key. Puedes obtenerla desde el [Dashboard](https://dashboard.ventipay.com/).
 
-Luego, en la sección Pagos de la configuración de WooCommerce, debes habilitar el método de pago "VentiPay", configurar tu API Key y decidir si trabajarás en modo live o test.
+Luego, en la sección Métodos de Pago de la configuración de Adobe Commerce, debes habilitar el método de pago "VentiPay" y configurar tu API Key
 
 ## Licencia
 
