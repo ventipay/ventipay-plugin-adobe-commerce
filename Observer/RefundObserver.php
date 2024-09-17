@@ -50,28 +50,34 @@ class RefundObserver implements ObserverInterface
         $this->curl->setCredentials($apiKey, '');
         $this->curl->addHeader('Content-Type', 'application/json');
         
-        try {
-          $this->curl->post(
-            'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
-            json_encode([
-              'destination' => 'payment_method',
-              'amount' => $amount
-            ])
-          );
-  
-          $body = $this->curl->getBody();
-          $response = json_decode($body);
-        } catch (\Exception $exception) {
-          $this->curl->post(
-            'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
-            json_encode([
-              'destination' => 'customer_balance',
-              'amount' => $amount
-            ])
-          );
-  
-          $body = $this->curl->getBody();
-          $response = json_decode($body);
+        $statusCode = null;
+
+        $this->curl->post(
+          'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
+          json_encode([
+            'destination' => 'payment_method',
+            'amount' => $amount
+          ])
+        );
+
+        $statusCode = $this->curl->getStatus();
+
+        if ($statusCode === 200) {
+          return;
+        }
+
+        $this->curl->post(
+          'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
+          json_encode([
+            'destination' => 'customer_balance',
+            'amount' => $amount
+          ])
+        );
+
+        $statusCode = $this->curl->getStatus();
+
+        if ($statusCode !== 200) {
+          throw new \Magento\Framework\Exception\LocalizedException(__('No hemos podido realizar el reembolso'));
         }
     }
 }
