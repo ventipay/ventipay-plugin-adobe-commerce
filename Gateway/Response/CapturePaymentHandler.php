@@ -4,12 +4,10 @@ namespace VentiPay\Gateway\Gateway\Response;
 use Magento\Payment\Gateway\Data\PaymentDataObjectInterface;
 use Magento\Payment\Gateway\Response\HandlerInterface;
 
-class TxnIdHandler implements HandlerInterface
+class CapturePaymentHandler implements HandlerInterface
 {
-    const TXN_ID = 'TXN_ID';
-
     /**
-     * Handles transaction id
+     * Handles
      *
      * @param array $handlingSubject
      * @param array $response
@@ -27,17 +25,9 @@ class TxnIdHandler implements HandlerInterface
         $paymentDO = $handlingSubject['payment'];
 
         $payment = $paymentDO->getPayment();
-
-        /** @var $payment \Magento\Sales\Model\Order\Payment */
-        $payment->setTransactionId($response[self::TXN_ID]);
-        $payment->setIsTransactionPending(1);
-        $payment->setIsTransactionClosed(false);
-        
-
         $order = $payment->getOrder();
-        $order->setState(\Magento\Sales\Model\Order::STATE_NEW);
-        $order->setStatus('pending');
-        $comment = __('Awaiting payment through VentiPay.');
-        $order->addStatusHistoryComment($comment, $payment->getOrder()->getStatus());
+        $amount = $order->getGrandTotal();
+
+        $payment->registerCaptureNotification($amount);
     }
 }

@@ -109,25 +109,8 @@ class Success extends Action
           ])->setHttpResponseCode(400);
         }
 
-        $payment->setIsTransactionPending(0);
-        $payment->setIsTransactionClosed(true);
-        $payment->save();
-        $order->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
-        $order->setStatus(\Magento\Sales\Model\Order::STATE_PROCESSING);
-
-        $comment = __('Payment authorized');
-        $order->addStatusHistoryComment($comment, $payment->getOrder()->getStatus());
-
-        $this->orderRepository->save($order);
-
-        if ($order->canInvoice()) {
-          $invoice = $this->invoiceManagement->prepareInvoice($order);
-
-          if ($invoice) {
-            $invoice->register();
-            $this->invoiceRepository->save($invoice);
-          }
-        }
+        $payment->capture(null);
+        $order->save();
 
         return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
     }

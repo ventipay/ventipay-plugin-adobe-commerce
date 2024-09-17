@@ -3,4 +3,7 @@
     <event name="payment_method_is_active">
       <observer name="custom_payment" instance="VentiPay\Gateway\Observer\VentiPayAvailable" />
     </event>
+    <event name="sales_order_creditmemo_save_before">
+        <observer name="ventipay_refund" instance="VentiPay\Gateway\Observer\RefundObserver" />
+    </event>
 </config>
