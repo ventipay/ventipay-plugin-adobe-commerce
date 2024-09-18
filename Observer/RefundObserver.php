@@ -13,7 +13,7 @@ class RefundObserver implements ObserverInterface
 
     public function __construct (
         ScopeConfigInterface $scopeConfig,
-        Curl $curl,
+        Curl $curl
     )
     {
         $this->config = $scopeConfig;

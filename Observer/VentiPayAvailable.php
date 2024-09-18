@@ -10,7 +10,7 @@ class VentiPayAvailable implements ObserverInterface
   protected $config;
 
     public function __construct (
-        ScopeConfigInterface $scopeConfig,
+        ScopeConfigInterface $scopeConfig
     )
     {
         $this->config = $scopeConfig;
