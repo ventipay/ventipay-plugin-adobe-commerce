@@ -49,21 +49,22 @@ define(
           .fail(() => {
             this.isPlaceOrderActionAllowed(true);
           })
-          .done(async (orderId) => {
-            try {
-              const fetching = await fetch('/payment_ventipay/checkout/create', {
-                method: 'POST',
-                body: JSON.stringify({ orderId }),
-                headers: {
-                  'Content-Type': 'application/json',
-                  'X-Requested-With': 'XMLHttpRequest',
-                },
+          .done((orderId) => {
+            fetch('/payment_ventipay/checkout/create', {
+              method: 'POST',
+              body: JSON.stringify({ orderId }),
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            })
+              .then(response => response.json())
+              .then((data) => {
+                window.location.href = data.url;
+              })
+              .catch((err) => {
+                // TMP: Empty
               });
-              const data = await fetching.json();
-
-              window.location.href = data.url;
-            } catch (error) {
-            }
           })
 
         return true;
