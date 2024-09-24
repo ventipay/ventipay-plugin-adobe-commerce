@@ -90,6 +90,20 @@ class Success extends Action
 
         $this->curl->setCredentials($apiKey, '');
         $this->curl->get('https://api.ventipay.com/v1/checkouts/' . $checkoutId);
+
+        $statusCode = $this->curl->getStatus();
+
+        if ($statusCode === 404) {
+          return $resultJson->setData([
+            'message' => 'checkout_not_found'
+          ])->setHttpResponseCode(404);
+        }
+
+        if ($statusCode !== 200) {
+          return $resultJson->setData([
+            'message' => 'failed'
+          ])->setHttpResponseCode($statusCode);
+        }
         
         $body = $this->curl->getBody();
         $response = json_decode($body);
@@ -102,16 +116,18 @@ class Success extends Action
           return $resultJson->setData([
             'message' => 'payment_refunded'
           ])->setHttpResponseCode(304);
-        } elseif ($response->status !== 'paid') {
-          return $resultJson->setData([
-            'message' => 'no_status_paid',
-            'status' => $response->status
-          ])->setHttpResponseCode(400);
         }
 
-        $payment->capture(null);
-        $order->save();
+        if ($response->status === 'paid') {
+          $payment->capture(null);
+          $order->save();
 
-        return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
+          return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
+        }
+
+        return $resultJson->setData([
+          'message' => 'no_status_paid',
+          'status' => $response->status
+        ])->setHttpResponseCode(400);
     }
 }

@@ -9,6 +9,7 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\HTTP\Client\Curl;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\UrlInterface;
+use VentiPay\Gateway\Helper\CurrencyHelper;
 
 class Create extends Action
 {
@@ -70,7 +71,6 @@ class Create extends Action
 
         $orderStatus = $order->getStatus();
 
-        // TODO: remove payment_review
         if ($orderStatus !== 'pending' and $orderStatus !== 'payment_review') {
           return $resultJson->setData([
             'message' => 'order_status_' . $orderStatus
@@ -86,12 +86,20 @@ class Create extends Action
         $currency = strtolower($order->getOrderCurrencyCode());
         $totalAmount = $order->getGrandTotal();
 
+        $totalAmountFormatted = CurrencyHelper::transformNumber($totalAmount, $currency);
+
+        if ($totalAmountFormatted === false) {
+          return $resultJson->setData([
+            'message' => 'currency_not_supported'
+          ])->setHttpResponseCode(400);
+        }
+
         $orderData = [
           'authorize' => true,
           'currency' => $currency,
           'items' => array([
             'name' => 'magento',
-            'unit_price' => $currency === 'usd' ? $totalAmount * 100 : $totalAmount,
+            'unit_price' => $totalAmountFormatted,
             'quantity' => 1
           ]),
           'metadata' => [

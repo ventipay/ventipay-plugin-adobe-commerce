@@ -76,8 +76,10 @@ class RefundObserver implements ObserverInterface
 
         $statusCode = $this->curl->getStatus();
 
-        if ($statusCode !== 200) {
-          throw new \Magento\Framework\Exception\LocalizedException(__('No hemos podido realizar el reembolso'));
+        if ($statusCode === 200) {
+          return;
         }
+
+        throw new \Magento\Framework\Exception\LocalizedException(__('No hemos podido realizar el reembolso'));
     }
 }
