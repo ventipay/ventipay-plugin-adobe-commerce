@@ -50,7 +50,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
         if ($this->request->getMethod() !== 'POST') {
           return $resultJson->setData([
             'message' => 'route_not_found'
-          ])->setHttpResponseCode(404);
+          ])->setHttpResponseCode(200);
         };
 
         $orderId = $this->getRequest()->getParam('orderId');
@@ -58,7 +58,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
         if (!$orderId) {
           return $resultJson->setData([
             'message' => 'orderid_is_required'
-          ])->setHttpResponseCode(400);
+          ])->setHttpResponseCode(200);
         }
 
         $order = null;
@@ -68,14 +68,14 @@ class Checkout extends Action implements CsrfAwareActionInterface
         } catch (NoSuchEntityException $e) {
           return $resultJson->setData([
             'message' => 'order_not_found'
-          ])->setHttpResponseCode(404);
+          ])->setHttpResponseCode(200);
         }
 
         if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
           return $resultJson->setData([
             'message' => 'order_not_pending_payment',
             'status' => $order->getStatus()
-          ])->setHttpResponseCode(400);
+          ])->setHttpResponseCode(200);
         }
 
         $payment = $order->getPayment();
@@ -84,11 +84,11 @@ class Checkout extends Action implements CsrfAwareActionInterface
         if (!$checkoutId) {
           return $resultJson->setData([
             'message' => 'checkout_id_not_found'
-          ])->setHttpResponseCode(404);
+          ])->setHttpResponseCode(200);
         } elseif (strpos($checkoutId, 'chk_') !== 0) {
           return $resultJson->setData([
             'message' => 'checkout_id_invalid'
-          ])->setHttpResponseCode(406);
+          ])->setHttpResponseCode(200);
         }
 
         $apiKey = $this->config->getValue(
@@ -99,6 +99,20 @@ class Checkout extends Action implements CsrfAwareActionInterface
 
         $this->curl->setCredentials($apiKey, '');
         $this->curl->get('https://api.ventipay.com/v1/checkouts/' . $checkoutId);
+
+        $statusCode = $this->curl->getStatus();
+
+        if ($statusCode === 404) {
+          return $resultJson->setData([
+            'message' => 'checkout_not_found'
+          ])->setHttpResponseCode(200);
+        }
+
+        if ($statusCode !== 200) {
+          return $resultJson->setData([
+            'message' => 'failed'
+          ])->setHttpResponseCode($statusCode);
+        }
         
         $body = $this->curl->getBody();
         $response = json_decode($body);
@@ -110,41 +124,26 @@ class Checkout extends Action implements CsrfAwareActionInterface
         } elseif ($response->refunded) {
           return $resultJson->setData([
             'message' => 'payment_refunded'
-          ])->setHttpResponseCode(304);
-        } elseif ($response->status !== 'paid') {
-          return $resultJson->setData([
-            'message' => 'no_status_paid',
-            'status' => $response->status
-          ])->setHttpResponseCode(400);
+          ])->setHttpResponseCode(200);
         }
 
-        $payment->setIsTransactionPending(0);
-        $payment->setIsTransactionClosed(true);
-        $payment->save();
-        $order->setState(\Magento\Sales\Model\Order::STATE_PROCESSING);
-        $order->setStatus(\Magento\Sales\Model\Order::STATE_PROCESSING);
+        if ($response->status === 'paid') {
+          $payment->capture(null);
+          $order->save();
 
-        $comment = __('Payment authorized');
-        $order->addStatusHistoryComment($comment, $payment->getOrder()->getStatus());
-
-        $this->orderRepository->save($order);
-
-        if ($order->canInvoice()) {
-          $invoice = $this->invoiceManagement->prepareInvoice($order);
-
-          if ($invoice) {
-            $invoice->register();
-            $this->invoiceRepository->save($invoice);
-          }
+          return $resultJson->setData([
+            'ventipay_checkout_id' =>  $checkoutId,
+            'id' => $response->id,
+            'status' => $response->status,
+            'refunded' => $response->refunded,
+            'message' => 'OK'
+          ]);
         }
 
         return $resultJson->setData([
-          'ventipay_checkout_id' =>  $checkoutId,
-          'id' => $response->id,
-          'status' => $response->status,
-          'refunded' => $response->refunded,
-          'message' => 'OK'
-        ]);
+          'message' => 'no_status_paid',
+          'status' => $response->status
+        ])->setHttpResponseCode(400);
     }
 
     public function createCsrfValidationException(RequestInterface $request): ?InvalidRequestException
