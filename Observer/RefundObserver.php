@@ -5,6 +5,7 @@ namespace VentiPay\Gateway\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\HTTP\Client\Curl;
+use VentiPay\Gateway\Helper\CurrencyHelper;
 
 class RefundObserver implements ObserverInterface
 {
@@ -40,7 +41,12 @@ class RefundObserver implements ObserverInterface
 
         $currency = strtolower($order->getOrderCurrencyCode());
         $grandTotal = $creditMemo->getBaseGrandTotal();
-        $amount = $currency === 'usd' ? $grandTotal * 100 : $grandTotal;
+
+        $amountFormatted = CurrencyHelper::transformNumber($grandTotal, $currency);
+
+        if ($amountFormatted === false) {
+          throw new \Magento\Framework\Exception\LocalizedException(__('Moneda no soportada.'));
+        }
 
         $apiKey = $this->config->getValue(
           'payment/ventipay_gateway/merchant_gateway_key',
@@ -56,7 +62,7 @@ class RefundObserver implements ObserverInterface
           'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
           json_encode([
             'destination' => 'payment_method',
-            'amount' => $amount
+            'amount' => $amountFormatted
           ])
         );
 
@@ -70,7 +76,7 @@ class RefundObserver implements ObserverInterface
           'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/refund',
           json_encode([
             'destination' => 'customer_balance',
-            'amount' => $amount
+            'amount' => $amountFormatted
           ])
         );
 
