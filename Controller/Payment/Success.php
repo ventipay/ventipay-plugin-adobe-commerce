@@ -11,6 +11,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Controller\Result\RedirectFactory;
 use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 
 class Success extends Action
 {
@@ -22,6 +23,7 @@ class Success extends Action
     protected $resultRedirectFactory;
     protected $invoiceManagement;
     protected $invoiceRepository;
+    protected $orderSender;
 
     public function __construct(
         Context $context,
@@ -32,7 +34,8 @@ class Success extends Action
         RequestInterface $request,
         RedirectFactory $resultRedirectFactory,
         InvoiceManagementInterface $invoiceManagement,
-        InvoiceRepositoryInterface $invoiceRepository
+        InvoiceRepositoryInterface $invoiceRepository,
+        OrderSender $orderSender
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->orderRepository = $orderRepository;
@@ -42,6 +45,7 @@ class Success extends Action
         $this->resultRedirectFactory = $resultRedirectFactory;
         $this->invoiceManagement = $invoiceManagement;
         $this->invoiceRepository = $invoiceRepository;
+        $this->orderSender = $orderSender;
         parent::__construct($context);
     }
 
@@ -120,6 +124,13 @@ class Success extends Action
 
         if ($response->status === 'paid') {
           $payment->capture(null);
+
+          $order->setCanSendNewEmailFlag(true);
+          $order->save();
+
+          try {
+            $this->orderSender->send($order);
+          } catch (\Exception $e) {}
           $order->save();
 
           return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');

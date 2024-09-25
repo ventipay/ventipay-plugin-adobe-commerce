@@ -6,4 +6,7 @@
     <event name="sales_order_creditmemo_save_before">
         <observer name="ventipay_refund" instance="VentiPay\Gateway\Observer\RefundObserver" />
     </event>
+    <event name="sales_order_place_before">
+        <observer name="ventipay_stop_email" instance="VentiPay\Gateway\Observer\SubmitObserver"/>
+    </event>
 </config>

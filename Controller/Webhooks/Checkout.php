@@ -12,6 +12,7 @@ use Magento\Framework\App\CsrfAwareActionInterface;
 use Magento\Framework\App\Request\InvalidRequestException;
 use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
+use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 
 class Checkout extends Action implements CsrfAwareActionInterface
 {
@@ -22,6 +23,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
     protected $request;
     protected $invoiceManagement;
     protected $invoiceRepository;
+    protected $orderSender;
 
     public function __construct(
         Context $context,
@@ -31,7 +33,8 @@ class Checkout extends Action implements CsrfAwareActionInterface
         ScopeConfigInterface $scopeConfig,
         RequestInterface $request,
         InvoiceManagementInterface $invoiceManagement,
-        InvoiceRepositoryInterface $invoiceRepository
+        InvoiceRepositoryInterface $invoiceRepository,
+        OrderSender $orderSender
     ) {
         $this->resultJsonFactory = $resultJsonFactory;
         $this->orderRepository = $orderRepository;
@@ -40,6 +43,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
         $this->request = $request;
         $this->invoiceManagement = $invoiceManagement;
         $this->invoiceRepository = $invoiceRepository;
+        $this->orderSender = $orderSender;
         parent::__construct($context);
     }
 
@@ -129,6 +133,14 @@ class Checkout extends Action implements CsrfAwareActionInterface
 
         if ($response->status === 'paid') {
           $payment->capture(null);
+
+          $order->setCanSendNewEmailFlag(true);
+          $order->save();
+
+          try {
+            $this->orderSender->send($order);
+          } catch (\Exception $e) {}
+
           $order->save();
 
           return $resultJson->setData([
