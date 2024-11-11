@@ -97,8 +97,9 @@ class Create extends Action
         $orderData = [
           'authorize' => true,
           'currency' => $currency,
+          'description' => $orderId,
           'items' => array([
-            'name' => 'magento',
+            'name' => $orderId,
             'unit_price' => $totalAmountFormatted,
             'quantity' => 1
           ]),
