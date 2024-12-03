@@ -98,6 +98,7 @@ class Create extends Action
           'authorize' => true,
           'currency' => $currency,
           'description' => $orderId,
+          'external_id' => $orderId,
           'items' => array([
             'name' => $orderId,
             'unit_price' => $totalAmountFormatted,
