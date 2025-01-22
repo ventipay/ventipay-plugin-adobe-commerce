@@ -118,8 +118,21 @@ class Create extends Action
           'notification_events' => ['checkout.paid']
         ];
 
+        $composerJsonPath = BP . '/composer.json';
+        if (!file_exists($composerJsonPath)) {
+            return $resultJson->setData([
+                'message' => 'composer_json_not_found'
+            ])->setHttpResponseCode(500);
+        }
+
+        $composerData = json_decode(file_get_contents($composerJsonPath), true);
+        $projectName = 'VentiPayAdobeCommerce';
+        $projectVersion = $composerData['version'] ?? 'unknown-version';
+        $userAgent = "{$projectName}/{$projectVersion}";
+
         $this->curl->setCredentials($apiKey, '');
         $this->curl->addHeader('Content-Type', 'application/json');
+        $this->curl->addHeader('User-Agent', $userAgent);
         $this->curl->post(
           'https://api.ventipay.com/v1/checkouts',
           json_encode($orderData)
