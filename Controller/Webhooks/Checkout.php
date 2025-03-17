@@ -136,9 +136,15 @@ class Checkout extends Action implements CsrfAwareActionInterface
 
         if ($response->status === 'paid') {
           if (isset($response->payment_method)) {
-            $payment->setAdditionalInformation('ventipay_payment_method_funding', $response->payment_method->funding);
             $payment->setAdditionalInformation('ventipay_payment_method_brand', $response->payment_method->brand);
-            $payment->setAdditionalInformation('ventipay_payment_method_last4', $response->payment_method->last4);
+            if (isset($response->payment_method->funding)) {
+              $payment->setAdditionalInformation('ventipay_payment_method_funding', $response->payment_method->funding);
+              $payment->setCcType($response->payment_method->funding);
+            }
+            if (isset($response->payment_method->last4)) {
+              $payment->setAdditionalInformation('ventipay_payment_method_last4', $response->payment_method->last4);
+              $payment->setCcLast4($response->payment_method->last4);
+            }
           }
 
           $payment->capture(null);
