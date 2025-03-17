@@ -101,8 +101,11 @@ class Checkout extends Action implements CsrfAwareActionInterface
           $order->getStoreId()
         );
 
+        $params = [
+          'expand' => ['payment_method']
+        ];
         $this->curl->setCredentials($apiKey, '');
-        $this->curl->get('https://api.ventipay.com/v1/checkouts/' . $checkoutId);
+        $this->curl->get('https://api.ventipay.com/v1/checkouts/' . $checkoutId . '?' . http_build_query($params));
 
         $statusCode = $this->curl->getStatus();
 
@@ -132,6 +135,12 @@ class Checkout extends Action implements CsrfAwareActionInterface
         }
 
         if ($response->status === 'paid') {
+          if (isset($response->payment_method)) {
+            $payment->setAdditionalInformation('ventipay_payment_method_funding', $response->payment_method->funding);
+            $payment->setAdditionalInformation('ventipay_payment_method_brand', $response->payment_method->brand);
+            $payment->setAdditionalInformation('ventipay_payment_method_last4', $response->payment_method->last4);
+          }
+
           $payment->capture(null);
 
           $order->setCanSendNewEmailFlag(true);
@@ -144,7 +153,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
           $order->save();
 
           return $resultJson->setData([
-            'ventipay_checkout_id' =>  $checkoutId,
+            'ventipay_checkout_id' => $checkoutId,
             'id' => $response->id,
             'status' => $response->status,
             'refunded' => $response->refunded,
