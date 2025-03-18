@@ -130,9 +130,9 @@ class Create extends Action
         $projectVersion = $composerData['version'] ?? 'unknown-version';
         $userAgent = "{$projectName}/{$projectVersion}";
 
+        $this->curl->setOption(CURLOPT_USERAGENT, $userAgent);
         $this->curl->setCredentials($apiKey, '');
         $this->curl->addHeader('Content-Type', 'application/json');
-        $this->curl->addHeader('User-Agent', $userAgent);
         $this->curl->post(
           'https://api.ventipay.com/v1/checkouts',
           json_encode($orderData)
