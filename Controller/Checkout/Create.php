@@ -110,7 +110,7 @@ class Create extends Action
             'customer_email' => $order->getCustomerEmail(),
             'billing_address' => $order->getBillingAddress()->getData(),
           ],
-          'cancel_url' => $this->url->getUrl('checkout/onepage/failure?orderId=' . $orderId),
+          'cancel_url' => $this->url->getUrl('checkout/cart'),
           'cancel_url_method' => 'get',
           'success_url' => $this->url->getUrl('payment_ventipay/payment/success?orderId=' . $orderId),
           'success_url_method' => 'get',
