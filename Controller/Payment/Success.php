@@ -56,7 +56,7 @@ class Success extends Action
         $orderId = $this->getRequest()->getParam('orderId');
 
         if (!$orderId) {
-          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
+          return $this->resultRedirectFactory->create()->setPath('checkout');
         }
 
         $order = null;

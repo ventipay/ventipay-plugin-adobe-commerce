@@ -113,7 +113,7 @@ class Cancel extends Action
         $response = json_decode($body);
 
         if (!isset($response)) {
-          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
+          return $this->resultRedirectFactory->create()->setPath('checkout');
         }
 
         if ($response->status === 'paid') {
@@ -124,8 +124,9 @@ class Cancel extends Action
         $this->curl->addHeader('Content-Type', 'application/json');
         $this->curl->post(
           'https://api.ventipay.com/v1/checkouts/' . $checkoutId . '/cancel',
+          null
         );
 
-        return $this->resultRedirectFactory->create()->setPath('checkout/cart');
+        return $this->resultRedirectFactory->create()->setPath('checkout');
     }
 }
