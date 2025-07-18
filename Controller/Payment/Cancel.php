@@ -53,7 +53,7 @@ class Cancel extends Action
     {
         $resultJson = $this->resultJsonFactory->create();
 
-        $orderId = $this->getRequest()->getParam('orderId');
+        $orderId = $this->getRequest()->getParam('order_id');
 
         if (!$orderId) {
           return $this->resultRedirectFactory->create()->setPath('checkout/cart');
@@ -117,7 +117,7 @@ class Cancel extends Action
         }
 
         if ($response->status === 'paid') {
-          return $this->resultRedirectFactory->create()->setPath('payment_ventipay/payment/success?orderId=' . $orderId);
+          return $this->resultRedirectFactory->create()->setPath('ventipay/payment/success?order_id=' . $orderId);
         }
 
         $this->curl->setCredentials($apiKey, '');

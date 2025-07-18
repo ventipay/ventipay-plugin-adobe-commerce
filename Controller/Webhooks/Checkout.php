@@ -57,7 +57,7 @@ class Checkout extends Action implements CsrfAwareActionInterface
           ])->setHttpResponseCode(200);
         };
 
-        $orderId = $this->getRequest()->getParam('orderId');
+        $orderId = $this->getRequest()->getParam('order_id');
 
         if (!$orderId) {
           return $resultJson->setData([

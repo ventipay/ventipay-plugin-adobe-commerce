@@ -51,13 +51,13 @@ class Create extends Action
         $rawBody = $this->request->getContent();
         $data = json_decode($rawBody, true);
 
-        if (!isset($data['orderId'])) {
+        if (!isset($data['order_id'])) {
           return $resultJson->setData([
             'message' => 'orderid_is_required'
           ])->setHttpResponseCode(400);
         }
 
-        $orderId = $data['orderId'];
+        $orderId = $data['order_id'];
 
         $order = null;
 
@@ -110,11 +110,11 @@ class Create extends Action
             'customer_email' => $order->getCustomerEmail(),
             'billing_address' => $order->getBillingAddress()->getData(),
           ],
-          'cancel_url' => $this->url->getUrl('payment_ventipay/payment/cancel?orderId=' . $orderId),
+          'cancel_url' => $this->url->getUrl('ventipay/payment/cancel?order_id=' . $orderId),
           'cancel_url_method' => 'get',
-          'success_url' => $this->url->getUrl('payment_ventipay/payment/success?orderId=' . $orderId),
+          'success_url' => $this->url->getUrl('ventipay/payment/success?order_id=' . $orderId),
           'success_url_method' => 'get',
-          'notification_url' => $this->url->getUrl('payment_ventipay/webhooks/checkout?orderId=' . $orderId),
+          'notification_url' => $this->url->getUrl('ventipay/webhooks/checkout?order_id=' . $orderId),
           'notification_events' => ['checkout.paid']
         ];
 

@@ -53,7 +53,7 @@ class Success extends Action
     {
         $resultJson = $this->resultJsonFactory->create();
 
-        $orderId = $this->getRequest()->getParam('orderId');
+        $orderId = $this->getRequest()->getParam('order_id');
 
         if (!$orderId) {
           return $this->resultRedirectFactory->create()->setPath('checkout/cart');
