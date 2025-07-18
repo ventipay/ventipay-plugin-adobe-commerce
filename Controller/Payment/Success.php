@@ -56,7 +56,7 @@ class Success extends Action
         $orderId = $this->getRequest()->getParam('orderId');
 
         if (!$orderId) {
-          return $this->resultRedirectFactory->create()->setPath('checkout');
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
 
         $order = null;
@@ -64,9 +64,7 @@ class Success extends Action
         try {
           $order = $this->orderRepository->get($orderId);
         } catch (NoSuchEntityException $e) {
-          return $resultJson->setData([
-            'message' => 'order_not_found'
-          ])->setHttpResponseCode(404);
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
 
         if ($order->getStatus() !== \Magento\Sales\Model\Order::STATE_PENDING_PAYMENT) {
@@ -76,14 +74,8 @@ class Success extends Action
         $payment = $order->getPayment();
         $checkoutId = $payment->getAdditionalInformation('ventipay_checkout_id');
 
-        if (!$checkoutId) {
-          return $resultJson->setData([
-            'message' => 'checkout_id_not_found'
-          ]);
-        } elseif (strpos($checkoutId, 'chk_') !== 0) {
-          return $resultJson->setData([
-            'message' => 'invalid_id'
-          ]);
+        if (!$checkoutId || strpos($checkoutId, 'chk_') !== 0) {
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
 
         $apiKey = $this->config->getValue(
@@ -98,28 +90,18 @@ class Success extends Action
         $statusCode = $this->curl->getStatus();
 
         if ($statusCode === 404) {
-          return $resultJson->setData([
-            'message' => 'checkout_not_found'
-          ])->setHttpResponseCode(404);
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart');
         }
 
         if ($statusCode !== 200) {
-          return $resultJson->setData([
-            'message' => 'failed'
-          ])->setHttpResponseCode($statusCode);
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart')
         }
         
         $body = $this->curl->getBody();
         $response = json_decode($body);
 
         if (!isset($response)) {
-          return $resultJson->setData([
-            'message' => 'no_response'
-          ])->setHttpResponseCode(400);
-        } elseif ($response->refunded) {
-          return $resultJson->setData([
-            'message' => 'payment_refunded'
-          ])->setHttpResponseCode(304);
+          return $this->resultRedirectFactory->create()->setPath('checkout/cart')
         }
 
         if ($response->status === 'paid') {
@@ -136,9 +118,6 @@ class Success extends Action
           return $this->resultRedirectFactory->create()->setPath('checkout/onepage/success');
         }
 
-        return $resultJson->setData([
-          'message' => 'no_status_paid',
-          'status' => $response->status
-        ])->setHttpResponseCode(400);
+        return $this->resultRedirectFactory->create()->setPath('checkout/cart');
     }
 }
