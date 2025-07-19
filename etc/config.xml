@@ -17,7 +17,7 @@
                 <is_gateway>1</is_gateway>
                 <sort_order>1</sort_order>
                 <debugReplaceKeys>MERCHANT_KEY</debugReplaceKeys>
-                <title>VentiPay</title>
+                <title>Venti</title>
                 <group>ventipay_group</group>
                 <allowspecific>1</allowspecific>
             </ventipay_gateway>

@@ -1,6 +1,6 @@
-# Plugin oficial de VentiPay para Adobe Commerce (Magento)
+# Plugin oficial de Venti para Adobe Commerce (Magento)
 
-Acepta pagos con VentiPay en tiendas Adobe Commerce (Magento)
+Acepta pagos con Venti en tiendas Adobe Commerce (Magento)
 
 ## Requisitos
 
@@ -28,7 +28,7 @@ php bin/magento setup:di:compile
 
 Lo primero es conseguir tu API Key. Puedes obtenerla desde el [Dashboard](https://dashboard.ventipay.com/).
 
-Luego, en la sección Métodos de Pago de la configuración de Adobe Commerce, debes habilitar el método de pago "VentiPay" y configurar tu API Key
+Luego, en la sección Métodos de Pago de la configuración de Adobe Commerce, debes habilitar el método de pago "Venti" y configurar tu API Key
 
 ## Licencia
 
