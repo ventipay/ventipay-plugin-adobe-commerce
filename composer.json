@@ -1,6 +1,6 @@
 {
     "name": "ventipay/adobe-commerce-checkout",
-    "description": "VentiPay Adobe Commerce Checkout Plugin",
+    "description": "Venti Adobe Commerce Checkout Plugin",
     "require": {
         "php": "~7.3.0||~7.4.0||~8.1.0||~8.2.0||~8.3.0"
     },
@@ -10,7 +10,7 @@
             "name": "VentiPay"
         }
     ],
-    "version": "1.14.0",
+    "version": "1.15.0",
     "license": [
         "OSL-3.0",
         "AFL-3.0"
