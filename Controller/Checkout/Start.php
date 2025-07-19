@@ -11,7 +11,7 @@ use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\UrlInterface;
 use VentiPay\Gateway\Helper\CurrencyHelper;
 
-class Create extends Action
+class Start extends Action
 {
     protected $resultJsonFactory;
     protected $orderRepository;
@@ -110,11 +110,11 @@ class Create extends Action
             'customer_email' => $order->getCustomerEmail(),
             'billing_address' => $order->getBillingAddress()->getData(),
           ],
-          'cancel_url' => $this->url->getUrl('ventipay/payment/cancel?order_id=' . $orderId),
+          'cancel_url' => $this->url->getUrl('ventipay/checkout/callback/order_id/' . $orderId . '/'),
           'cancel_url_method' => 'get',
-          'success_url' => $this->url->getUrl('ventipay/payment/success?order_id=' . $orderId),
+          'success_url' => $this->url->getUrl('ventipay/checkout/callback/order_id/' . $orderId . '/'),
           'success_url_method' => 'get',
-          'notification_url' => $this->url->getUrl('ventipay/webhooks/checkout?order_id=' . $orderId),
+          'notification_url' => $this->url->getUrl('ventipay/webhooks/checkout/order_id/' . $orderId . '/'),
           'notification_events' => ['checkout.paid']
         ];
 

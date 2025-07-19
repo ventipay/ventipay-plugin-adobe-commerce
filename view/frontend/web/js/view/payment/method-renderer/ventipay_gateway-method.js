@@ -50,7 +50,7 @@ define(
             this.isPlaceOrderActionAllowed(true);
           })
           .done((orderId) => {
-            fetch('/ventipay/checkout/create', {
+            fetch('/ventipay/checkout/start', {
               method: 'POST',
               body: JSON.stringify({ order_id: orderId }),
               headers: {
