@@ -13,6 +13,8 @@ use Magento\Sales\Api\InvoiceManagementInterface;
 use Magento\Sales\Api\InvoiceRepositoryInterface;
 use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Psr\Log\LoggerInterface;
+use Magento\Checkout\Model\Session as CheckoutSession;
+use Magento\Quote\Model\QuoteFactory;
 
 class Callback extends Action
 {
@@ -26,6 +28,8 @@ class Callback extends Action
     protected $invoiceRepository;
     protected $orderSender;
     protected $logger;
+    protected $checkoutSession;
+    protected $quoteFactory;
 
     public function __construct(
         Context $context,
@@ -38,7 +42,9 @@ class Callback extends Action
         InvoiceManagementInterface $invoiceManagement,
         InvoiceRepositoryInterface $invoiceRepository,
         OrderSender $orderSender,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        CheckoutSession $checkoutSession,
+        QuoteFactory $quoteFactory
     ) {
         parent::__construct($context);
         $this->resultJsonFactory = $resultJsonFactory;
@@ -51,6 +57,8 @@ class Callback extends Action
         $this->invoiceRepository = $invoiceRepository;
         $this->orderSender = $orderSender;
         $this->logger = $logger;
+        $this->checkoutSession = $checkoutSession;
+        $this->quoteFactory = $quoteFactory;
     }
 
     public function execute()
@@ -78,7 +86,6 @@ class Callback extends Action
             return $resultRedirect->setPath('checkout/cart');
         }
 
-        // Optional: skip if already captured
         if ($payment->getAmountPaid() > 0 || $order->getTotalPaid() > 0) {
             $this->logger->info('[VentiPay Callback] Order already paid. Skipping capture.', ['order_id' => $order->getId()]);
             return $resultRedirect->setPath('checkout/onepage/success');
@@ -106,7 +113,38 @@ class Callback extends Action
         $response = json_decode($this->curl->getBody());
 
         if (!isset($response->status) || $response->status !== 'paid') {
-            $this->logger->warning('[VentiPay Callback] Checkout status not paid.', ['checkout_id' => $checkoutId, 'status' => $response->status ?? null]);
+            $this->logger->warning('[VentiPay Callback] Checkout status not paid.', [
+                'checkout_id' => $checkoutId,
+                'status' => $response->status ?? null
+            ]);
+
+            // Restore quote
+            try {
+                $quoteId = $order->getQuoteId();
+                $quote = $this->quoteFactory->create()->load($quoteId);
+
+                if ($quote->getId()) {
+                    $quote->setIsActive(true)
+                        ->setReservedOrderId(null);
+
+                    // If guest order, remove customer ID
+                    if ($order->getCustomerIsGuest()) {
+                        $quote->setCustomerId(null)
+                            ->setCustomerEmail($order->getCustomerEmail());
+                    }
+
+                    $this->checkoutSession->replaceQuote($quote);
+                    $this->checkoutSession->getQuote()->save();
+
+                    $this->logger->info('[VentiPay Callback] Quote restored and replaced in session.', [
+                        'quote_id' => $quoteId,
+                        'customer_id' => $quote->getCustomerId()
+                    ]);
+                }
+            } catch (\Exception $e) {
+                $this->logger->error('[VentiPay Callback] Failed to restore quote.', ['error' => $e->getMessage()]);
+            }
+
             return $resultRedirect->setPath('checkout/cart');
         }
 
