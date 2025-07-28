@@ -15,6 +15,7 @@ use Magento\Sales\Model\Order\Email\Sender\OrderSender;
 use Psr\Log\LoggerInterface;
 use Magento\Checkout\Model\Session as CheckoutSession;
 use Magento\Quote\Model\QuoteFactory;
+use Magento\Customer\Model\Session as CustomerSession;
 
 class Callback extends Action
 {
@@ -30,6 +31,7 @@ class Callback extends Action
     protected $logger;
     protected $checkoutSession;
     protected $quoteFactory;
+    protected $customerSession;
 
     public function __construct(
         Context $context,
@@ -44,7 +46,8 @@ class Callback extends Action
         OrderSender $orderSender,
         LoggerInterface $logger,
         CheckoutSession $checkoutSession,
-        QuoteFactory $quoteFactory
+        QuoteFactory $quoteFactory,
+        CustomerSession $customerSession
     ) {
         parent::__construct($context);
         $this->resultJsonFactory = $resultJsonFactory;
@@ -59,6 +62,7 @@ class Callback extends Action
         $this->logger = $logger;
         $this->checkoutSession = $checkoutSession;
         $this->quoteFactory = $quoteFactory;
+        $this->customerSession = $customerSession;
     }
 
     public function execute()
@@ -118,19 +122,30 @@ class Callback extends Action
                 'status' => $response->status ?? null
             ]);
 
-            // Restore quote
+            // Restore quote for unpaid flow
             try {
                 $quoteId = $order->getQuoteId();
                 $quote = $this->quoteFactory->create()->load($quoteId);
 
                 if ($quote->getId()) {
                     $quote->setIsActive(true)
-                        ->setReservedOrderId(null);
+                        ->setReservedOrderId(null)
+                        ->setStoreId($order->getStoreId());
 
-                    // If guest order, remove customer ID
                     if ($order->getCustomerIsGuest()) {
+                        // Guest: detach customer
                         $quote->setCustomerId(null)
-                            ->setCustomerEmail($order->getCustomerEmail());
+                              ->setCustomerEmail($order->getCustomerEmail());
+                    } else {
+                        // Logged-in: sync with current session or fallback to order's customer_id
+                        if ($this->customerSession->isLoggedIn()) {
+                            $sessionCustomerId = $this->customerSession->getCustomerId();
+                            $quote->setCustomerId($sessionCustomerId);
+                        } else {
+                            $quote->setCustomerId($order->getCustomerId());
+                        }
+
+                        $quote->setCustomerEmail($order->getCustomerEmail());
                     }
 
                     $this->checkoutSession->replaceQuote($quote);
@@ -148,28 +163,32 @@ class Callback extends Action
             return $resultRedirect->setPath('checkout/cart');
         }
 
-        // Perform capture
+        // Payment successful — capture and confirm order
         try {
             $payment->capture(null);
             $order->setCanSendNewEmailFlag(true);
             $this->orderRepository->save($order);
-
             $this->logger->info('[VentiPay Callback] Order captured.', ['order_id' => $order->getId()]);
         } catch (\Throwable $e) {
-            $this->logger->error('[VentiPay Callback] Capture failed.', ['order_id' => $order->getId(), 'error' => $e->getMessage()]);
+            $this->logger->error('[VentiPay Callback] Capture failed.', [
+                'order_id' => $order->getId(),
+                'error' => $e->getMessage()
+            ]);
             return $resultRedirect->setPath('checkout/cart');
         }
 
-        // Send email only if not already sent
         try {
             if (!$order->getEmailSent()) {
                 $this->orderSender->send($order);
                 $this->logger->info('[VentiPay Callback] Order email sent.', ['order_id' => $order->getId()]);
             } else {
-                $this->logger->info('[VentiPay Callback] Email already sent. Skipping.', ['order_id' => $order->getId()]);
+                $this->logger->info('[VentiPay Callback] Email already sent.', ['order_id' => $order->getId()]);
             }
         } catch (\Throwable $e) {
-            $this->logger->warning('[VentiPay Callback] Email send failed.', ['order_id' => $order->getId(), 'error' => $e->getMessage()]);
+            $this->logger->warning('[VentiPay Callback] Email send failed.', [
+                'order_id' => $order->getId(),
+                'error' => $e->getMessage()
+            ]);
         }
 
         return $resultRedirect->setPath('checkout/onepage/success');
